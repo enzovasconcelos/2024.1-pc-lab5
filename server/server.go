@@ -22,9 +22,9 @@ func main() {
 			log.Print(err)
 			continue
 		}
-        request, errConn := io.ReadAll(conn)
-        if errConn != nil {
-            log.Print(errConn)
+        request, errRead := io.ReadAll(conn)
+        if errRead != nil {
+            log.Print(errRead)
         }
         data := strings.Split(string(request), " ")
         switch command := data[1]; command {
@@ -34,6 +34,7 @@ func main() {
             case "find":
                 // TODO: implementar aqui
                 log.Print("entrou no find")
+                // go handleFind(conn, data, fileHashs)
             default:
                 log.Print("descartando comando inválido")
         }
@@ -48,20 +49,20 @@ func listenDiffs(channelDiffs chan []string, fileHashs map[string][]string) {
         fileHash := command[1]
         switch command[0] {
             case "a":
-                fileHashs[ipAddress] = append(fileHashs[ipAddress], fileHash)
+                fileHashs[fileHash] = append(fileHashs[fileHash], ipAddress)
                 log.Print("file added")
             case "r":
-                fileHashs[ipAddress] = removeHash(fileHashs[ipAddress], fileHash)
+                fileHashs[fileHash] = removeElem(fileHashs[fileHash], ipAddress)
                 log.Print("file removed")
         }
         fmt.Println(fileHashs)
     }
 }
 
-func removeHash(list []string, hash string) [] string {
+func removeElem(list []string, elem string) [] string {
     newList := []string {}
     for _, current := range list {
-        if current != hash {
+        if current != elem {
             newList = append(newList, current)
         }
     } 
