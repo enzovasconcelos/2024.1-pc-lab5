@@ -10,8 +10,8 @@ import (
 
 func main() {
     command := os.Args[1]
-    // serverIp := "localhost:5000" // Modificar quando o real ip do servidor for definido
-    serverIp := "150.165.42.145:5000" // Modificar quando o real ip do servidor for definido
+    serverIp := "localhost:5000" // Modificar quando o real ip do servidor for definido
+    //serverIp := "150.165.42.145:5000" // Modificar quando o real ip do servidor for definido
     if command == "search" {
         fileHash := os.Args[2]
         search(fileHash, serverIp)
@@ -68,8 +68,8 @@ func publish(operationAndFileHashs string, serverIp string) {
 	defer conn.Close()
 
 	fmt.Println("IP do cliente:", clientIp)
-
-	_, err = conn.Write([]byte(clientIp + " publish " + operationAndFileHashs))
+	
+	_, err = conn.Write([]byte(clientIp + " publish " + operationAndFileHashs)) // nao precisa mais ser operation e filehashs, apenas todos os hashs que o cliente tem, espacados ex ip + publish + 3 4 5 6
 	if err != nil {
 		fmt.Println("Erro ao enviar dados para o servidor:", err)
 		return

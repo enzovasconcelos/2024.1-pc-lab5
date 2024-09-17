@@ -48,7 +48,7 @@ func handleConnection(conn net.Conn, channelDiffs chan []string, fileHashs map[s
 	switch command := data[1]; command {
 	case "publish":
 		log.Print("entrou no publish")
-		handlePublish(conn, data, channelDiffs)
+		handlePublish(conn, data, channelDiffs, fileHashs)
 	case "find":
 		log.Print("entrou no find")
 		handleFind(conn, data, fileHashs)
@@ -83,26 +83,43 @@ func handleFind(conn net.Conn, data []string, fileHashs map[string][]string) {
 	}
 }
 
-func handlePublish(conn net.Conn, data []string, channelDiffs chan []string) {
-	for _, diff := range data[2:] {
+func handlePublish(conn net.Conn, data []string, channelDiffs chan []string, fileHashs map[string][]string) {
+	// percorrer cada hash do mapa e verificar se o ip do cliente está presente
+	diffs := []string{}
+	for hash, ips := range fileHashs {
+        ipPresente := false
+        for _, ip := range ips {
+            if ip == data[0] {
+                ipPresente = true
+                break
+            }
+        }
+
+		if ipPresente && contains(data[2:], hash) {
+			diffs = append(diffs, "a,"+hash)
+		} else if !ipPresente && contains(data[2:], hash) {
+			diffs = append(diffs, "a,"+hash)
+		} else if ipPresente && !contains(data[2:], hash) {
+			diffs = append(diffs, "r,"+hash)
+		}
+    }
+	
+	// Verificar se há hashes em data[2:] que não estão no mapa fileHashs
+    for _, hash := range data[2:] {
+        if _, exists := fileHashs[hash]; !exists {
+            // Adicionar lógica para lidar com hashes que não existem no mapa
+            diffs = append(diffs, "a,"+hash)
+        }
+    }
+	
+	for _, diff := range diffs {
 		channelDiffs <- []string{data[0], diff}
 	}
 
-	command := strings.Split(data[2], ",")[0]
 	var err interface{}
+	// Envia uma mensagem de confirmação ao cliente
+	_, err = conn.Write([]byte("Itens atualizados com sucesso"))
 
-	if command == "a" {
-		// Envia uma mensagem de confirmação ao cliente
-		_, err = conn.Write([]byte("Itens adicionados com sucesso"))
-
-	} else if command == "r" {
-		// Envia uma mensagem de confirmação ao cliente
-		_, err = conn.Write([]byte("Itens removidos com sucesso"))
-
-	} else {
-		_, err = conn.Write([]byte("Comando inválido"))
-
-	}
 	if err != nil {
 		log.Print("Erro ao enviar confirmação ao cliente:", err)
 	}
