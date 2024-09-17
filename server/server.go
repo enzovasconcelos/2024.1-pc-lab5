@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -47,7 +46,6 @@ func handleConnection(conn net.Conn, channelDiffs chan []string) {
 	}
 	switch command := data[1]; command {
 	case "publish":
-		log.Print("entrou no publish")
 		handlePublish(conn, data, channelDiffs)
 	case "find":
 		log.Print("entrou no find")
@@ -62,9 +60,21 @@ func handlePublish(conn net.Conn, data []string, channelDiffs chan []string) {
 		channelDiffs <- []string{data[0], diff}
 	}
 
-	fmt.Println("teste")
-	// Envia uma mensagem de confirmação ao cliente
-	_, err := conn.Write([]byte("Itens adicionados com sucesso"))
+	command := strings.Split(data[2], ",")[0]
+	var err interface{}
+
+	if command == "a" {
+		// Envia uma mensagem de confirmação ao cliente
+		_, err = conn.Write([]byte("Itens adicionados com sucesso"))
+
+	} else if command == "r" {
+		// Envia uma mensagem de confirmação ao cliente
+		_, err = conn.Write([]byte("Itens removidos com sucesso"))
+
+	} else {
+		_, err = conn.Write([]byte("Comando inválido"))
+
+	}
 	if err != nil {
 		log.Print("Erro ao enviar confirmação ao cliente:", err)
 	}
@@ -98,7 +108,6 @@ func listenDiffs(channelDiffs chan []string, fileHashs map[string][]string) {
 			fileHashs[fileHash] = removeElem(fileHashs[fileHash], ipAddress)
 			log.Print("file removed")
 		}
-		fmt.Println(fileHashs)
 	}
 }
 
