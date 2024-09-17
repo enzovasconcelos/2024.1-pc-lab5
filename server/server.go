@@ -9,70 +9,104 @@ import (
 )
 
 func main() {
-	fileHashs := make(map[string][]string)
-	channelDiffs := make(chan []string)
-	listener, err := net.Listen("tcp", "localhost:8080")
+	listener, err := net.Listen("tcp", ":5000")
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer listener.Close()
+
+	channelDiffs := make(chan []string)
+	fileHashs := make(map[string][]string)
+
 	go listenDiffs(channelDiffs, fileHashs)
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Print(err)
 			continue
 		}
-		ipAddress := conn.RemoteAddr().String()
-		log.Print(ipAddress)
-		request, errConn := io.ReadAll(conn)
-		if errConn != nil {
-			log.Print(errConn)
-		}
-		data := strings.Split(string(request), " ")
-		switch command := data[0]; command {
-		case "publish":
-			log.Print("entrou no publish")
-			go handlePublish(data, channelDiffs)
-		case "search":
-			// TODO: implementar aqui
-			log.Print("entrou no search")
-		default:
-			log.Print("descartando comando inválido")
-		}
+		go handleConnection(conn, channelDiffs)
 	}
 }
 
-func listenDiffs(channelDiffs chan []string, fileHashs map[string][]string) {
-	for {
-		diff, _ := <-channelDiffs
-		ipAddress := diff[0]
-		command := strings.Split(diff[1], ",")
-		fileHash := command[1]
-		switch command[0] {
-		case "a":
-			fileHashs[ipAddress] = append(fileHashs[ipAddress], fileHash)
-			log.Print(fileHashs)
-			log.Print("file added")
-		case "r":
-			fileHashs[ipAddress] = removeHash(fileHashs[ipAddress], fileHash)
-			log.Print("file removed")
+func handleConnection(conn net.Conn, channelDiffs chan []string) {
+	defer conn.Close()
+	buffer := make([]byte, 1024)
+	n, err := conn.Read(buffer)
+	if err != nil {
+		if err != io.EOF {
+			log.Print(err)
 		}
-		fmt.Println(fileHashs)
+		return
+	}
+	data := strings.Split(string(buffer[:n]), " ")
+	if len(data) < 2 {
+		log.Print("descartando comando inválido")
+		return
+	}
+	switch command := data[1]; command {
+	case "publish":
+		log.Print("entrou no publish")
+		handlePublish(conn, data, channelDiffs)
+	case "find":
+		log.Print("entrou no find")
+		// Implementar handleFind aqui
+	default:
+		log.Print("descartando comando inválido")
 	}
 }
 
-func removeHash(list []string, hash string) []string {
+func handlePublish(conn net.Conn, data []string, channelDiffs chan []string) {
+	for _, diff := range data[2:] {
+		channelDiffs <- []string{data[0], diff}
+	}
+
+	fmt.Println("teste")
+	// Envia uma mensagem de confirmação ao cliente
+	_, err := conn.Write([]byte("Itens adicionados com sucesso"))
+	if err != nil {
+		log.Print("Erro ao enviar confirmação ao cliente:", err)
+	}
+}
+
+func removeElem(list []string, elem string) []string {
 	newList := []string{}
 	for _, current := range list {
-		if current != hash {
+		if current != elem {
 			newList = append(newList, current)
 		}
 	}
 	return newList
 }
 
-func handlePublish(data []string, channelDiffs chan []string) {
-	for _, diff := range data[2:] {
-		channelDiffs <- []string{data[0], diff}
+func listenDiffs(channelDiffs chan []string, fileHashs map[string][]string) {
+	for {
+		diff := <-channelDiffs
+		ipAddress := diff[0]
+		command := strings.Split(diff[1], ",")
+		fileHash := command[1]
+		switch command[0] {
+		case "a":
+			if !contains(fileHashs[fileHash], ipAddress) {
+				fileHashs[fileHash] = append(fileHashs[fileHash], ipAddress)
+				log.Print("file added")
+			} else {
+				log.Print("IP já presente no array")
+			}
+		case "r":
+			fileHashs[fileHash] = removeElem(fileHashs[fileHash], ipAddress)
+			log.Print("file removed")
+		}
+		fmt.Println(fileHashs)
 	}
+}
+
+func contains(list []string, elem string) bool {
+	for _, item := range list {
+		if item == elem {
+			return true
+		}
+	}
+	return false
 }
