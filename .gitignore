@@ -1,2 +1,2 @@
-.exe
-.gitkeep
+server/*.exe
+client/*.exe
