@@ -134,8 +134,15 @@ func listenDiffs(channelDiffs chan []string, fileHashs map[string][]string) {
 			}
 
 		case "r":
-			fileHashs[fileHash] = removeElem(fileHashs[fileHash], ipAddress)
-			log.Print("file removed")
+			if contains(fileHashs[fileHash], ipAddress) {
+				fileHashs[fileHash] = removeElem(fileHashs[fileHash], ipAddress)
+				if len(fileHashs[fileHash]) == 0 {
+					delete(fileHashs, fileHash)
+				}
+				log.Print("file removed")
+			} else {
+				log.Print("IP não está presente no array")
+			}
 		}
 		fmt.Println(fileHashs)
 	}
