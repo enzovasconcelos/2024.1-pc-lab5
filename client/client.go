@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"time"
 )
 
 func main() {
@@ -22,6 +21,13 @@ func main() {
 }
 
 func search(fileHash string, serverIp string) {
+
+	clientIp, err := getClientIP()
+	if err != nil {
+		fmt.Println("Erro ao obter o IP do cliente:", err)
+		return
+	}
+
 	conn, err := net.Dial("tcp", serverIp)
 	if err != nil {
 		fmt.Println(err)
@@ -29,11 +35,21 @@ func search(fileHash string, serverIp string) {
 	}
 	defer conn.Close()
 
-	_, err = conn.Write([]byte("search " + fileHash))
+	_, err = conn.Write([]byte(clientIp + " find " + fileHash))
 	if err != nil {
 		fmt.Println("Erro ao enviar dados para o servidor:", err)
 		return
 	}
+
+	fmt.Println("Aguardando resposta do servidor...")
+
+	response, err := io.ReadAll(conn)
+	if err != nil {
+		fmt.Println("Erro ao ler resposta do servidor:", err)
+		return
+	}
+
+	fmt.Println("Resposta do servidor:", string(response))
 }
 
 func publish(operationAndFileHashs string, serverIp string) {
@@ -51,9 +67,6 @@ func publish(operationAndFileHashs string, serverIp string) {
 	defer conn.Close()
 
 	fmt.Println("IP do cliente:", clientIp)
-
-	// Pausa de 2 segundos antes de enviar a solicitação
-	time.Sleep(2 * time.Second)
 
 	_, err = conn.Write([]byte(clientIp + " publish " + operationAndFileHashs))
 	if err != nil {
