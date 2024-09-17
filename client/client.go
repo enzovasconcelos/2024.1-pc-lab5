@@ -9,15 +9,16 @@ import (
 )
 
 func main() {
-	command := os.Args[1]
-	serverIp := "localhost:5000" // Modificar quando o real ip do servidor for definido
-	if command == "search" {
-		fileHash := os.Args[2]
-		search(fileHash, serverIp)
-	} else if command == "publish" {
-		operationAndFileHashs := strings.Join(os.Args[2:], " ")
-		publish(operationAndFileHashs, serverIp)
-	}
+    command := os.Args[1]
+    // serverIp := "localhost:5000" // Modificar quando o real ip do servidor for definido
+    serverIp := "150.165.42.145:5000" // Modificar quando o real ip do servidor for definido
+    if command == "search" {
+        fileHash := os.Args[2]
+        search(fileHash, serverIp)
+    } else if command == "publish" {
+        operationAndFileHashs := strings.Join(os.Args[2:], " ")
+        publish(operationAndFileHashs, serverIp)
+    }
 }
 
 func search(fileHash string, serverIp string) {
