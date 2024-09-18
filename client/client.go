@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -18,6 +19,11 @@ func main() {
         search(fileHash, serverIp)
     } else if command == "publish" {
         // operationAndFileHashs := strings.Join(os.Args[2:], " ")
+        cmd := exec.Command("../hash/hash")
+        _, errCmd := cmd.Output()
+        if errCmd != nil {
+            fmt.Println(errCmd)
+        }
         operationAndFileHashs, errHashs := getFileHashs(directory)
         if errHashs != nil {
             fmt.Println(errHashs)

@@ -14,7 +14,7 @@ Cliente-Servidor
 ### Primeiramente é preciso buildar cada arquivo.
 
 ```bash
-go build nomearquivo.go
+./build.sh
 ```
 
 ### Comandos
@@ -25,11 +25,8 @@ caminho na variável **directory** no client/client.go
 Exemplo de publicação para o cliente
 
 Atualizar todos os arquivos de um determinado diretório no server.
-É necessário antes rodar o script de client/hash.go para gerar os
-hashs dos arquivos. Também é preciso informar o diretório dos arquivos
-no script de hash, na variável **directory**.
 ```bash
-./hash && ./client publish
+./client publish
 ```
 
 - Exemplo de search para o cliente por um determinado hash
