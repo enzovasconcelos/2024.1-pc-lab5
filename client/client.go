@@ -9,16 +9,61 @@ import (
 )
 
 func main() {
+    directory := "/tmp/dataset"
     command := os.Args[1]
-    // serverIp := "localhost:5000" // Modificar quando o real ip do servidor for definido
-    serverIp := "150.165.42.145:5000" // Modificar quando o real ip do servidor for definido
+    serverIp := "localhost:5000" // Modificar quando o real ip do servidor for definido
+    // serverIp := "150.165.42.145:5000" // Modificar quando o real ip do servidor for definido
     if command == "search" {
         fileHash := os.Args[2]
         search(fileHash, serverIp)
     } else if command == "publish" {
-        operationAndFileHashs := strings.Join(os.Args[2:], " ")
+        // operationAndFileHashs := strings.Join(os.Args[2:], " ")
+        operationAndFileHashs, errHashs := getFileHashs(directory)
+        if errHashs != nil {
+            fmt.Println(errHashs)
+            os.Exit(1)
+        }
+        fmt.Println(operationAndFileHashs)
         publish(operationAndFileHashs, serverIp)
     }
+}
+
+func getFileHashs(directory string) (string, error) {
+    files, errDir := os.ReadDir(directory)
+    if errDir != nil {
+        return "", errDir
+    }
+    output := ""
+    for _, file := range files {
+        if !strings.HasSuffix(file.Name(), ".hash") {
+            continue
+        }
+        //originalName := strings.Split(file.Name(), ".hash")[0]
+        //if existFile(directory, originalName) {
+        //    output += "a,"
+        //} else {
+        //    output += "r,"
+        //}
+        hash, errHash := getHashOfFile(directory, file.Name())
+        if errHash != nil {
+            return "", errHash
+        }
+        output += hash + " "
+    }
+    return strings.TrimSpace(output), nil
+}
+
+func existFile(directory string, fileName string) bool {
+    _, err := os.ReadFile(fmt.Sprintf("%s/%s", directory, fileName))
+    return err == nil
+}
+
+func getHashOfFile(directory string, fileName string) (string, error) {
+    bytes, err := os.ReadFile(fmt.Sprintf("%s/%s", directory, fileName))
+    if err != nil {
+        return "", err
+    }
+    return string(bytes), nil 
 }
 
 func search(fileHash string, serverIp string) {
@@ -68,7 +113,7 @@ func publish(operationAndFileHashs string, serverIp string) {
 	defer conn.Close()
 
 	fmt.Println("IP do cliente:", clientIp)
-
+    fmt.Println(clientIp + " publish " + operationAndFileHashs)
 	_, err = conn.Write([]byte(clientIp + " publish " + operationAndFileHashs))
 	if err != nil {
 		fmt.Println("Erro ao enviar dados para o servidor:", err)

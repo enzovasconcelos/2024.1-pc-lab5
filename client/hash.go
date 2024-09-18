@@ -12,7 +12,6 @@ type ResultCalculate struct {
     sum int
 }
 
-
 func main() {
     // diretório onde estão os arquivos
     directory := "/tmp/dataset"
